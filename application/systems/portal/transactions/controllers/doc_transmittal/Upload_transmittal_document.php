@@ -12,6 +12,8 @@ class Upload_transmittal_document extends Task_Controller
         $this->load->model($this->folder.'/document_transmittal_model', 'dt_model'); 
         $this->load->model('Documents_model', 'document_model'); 
         $this->load->model(CORE_USER_MANAGEMENT.'/users_model', 'users_model');
+            
+        $this->load->model('models/pria_workflow_model', 'pwm', TRUE);
 
         $this->path_task_views .= $this->folder;
     }
@@ -160,12 +162,15 @@ class Upload_transmittal_document extends Task_Controller
                     'courier_tracking_number'        => $data['courier_tracking_number'],
                     'transmittal_document_sender'    => $data['transmittal_document_sender'],
                     'release_date'                   => $data['release_date'] !== '' ? $data['release_date'] : NULL,
+                    'modified_by'                    => $this->session->user_id,
+                    'modified_date'                  => date(FORMAT_DB_DATETIME)
                 ];
                 if($dt_details['org_code'] != $data['business_center']){
                     $update_values += [
                         'vendor_code'                    => NULL,   
                     ];
                 }
+                $this->pwm->update_workflow(['reference_num' => $data['document_tracer_batch_number']], ['pria_workflow_id' => $task_details['pria_workflow_id']]);
             }
             $this->dt_model->update_document_transmittal($where, $update_values);
 
