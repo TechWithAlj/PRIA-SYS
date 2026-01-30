@@ -458,13 +458,15 @@ var Task = (function($, document, window)
 	};
 
 	var initPage = function(obj, config){
+        console.log(obj);
+
 		_taskConfig = config;
-	console.log('kevin');
+	console.log('Modified Task initialized - Overriden by return_check_transmittal_document.js');
 		create_avatar($('.letter-avatar'), {width:45,height:45,fontSize:30});
 
 		const divActions   = document.querySelector('.task-action-btns'),
 			form 		   = document.getElementById('form-task'),
-			$form 	   = $(form),
+			$form 	       = $(form),
 			$parsley 	   = $form.parsley(),
 			path		   = $base_url + 'transactions/';
 
@@ -493,9 +495,9 @@ var Task = (function($, document, window)
 		}
 
 		
-		document.querySelector('input[name="dr_chk[]"').addEventListener('click', function(ev){
-			ev.preventDefault();
-		});
+		// document.querySelector('input[name="dr_chk[]"').addEventListener('click', function(ev){
+		// 	ev.preventDefault();
+		// });
 
 
 		divActions.addEventListener('click', function(ev){
@@ -530,11 +532,12 @@ var Task = (function($, document, window)
 					_taskConfig.formData	   += '&task_status=' + $.CONSTANTS.TASK_STATUS_DONE;
 				break;
 
-				case 'btn-approve-task':
-					validateForm				= false;
+				case 'btn-approve-task': 
+					validateForm				= true;
 					wConfirm					= true;
 					controller 					= 'task/tag_approve';
 					_taskConfig.statusText 		= statusApproved;
+                    _taskConfig.formData	   += '&task_status=' + $.CONSTANTS.TASK_STATUS_DONE;
 				break;
 
 				case 'btn-disapprove-task':
@@ -594,22 +597,22 @@ var Task = (function($, document, window)
 				e.preventDefault();
 		});
 
-	 	$(".auto_save_dr").off("change").on("change", function() {
-	 		const check_flag = ($(this).prop('checked') == true)? "Y": "N";
-			const revert_prop = ($(this).prop('checked') == true)? false: true;
+	 	// $(".auto_save_dr").off("change").on("change", function() {
+	 	// 	const check_flag = ($(this).prop('checked') == true)? "Y": "N";
+		// 	const revert_prop = ($(this).prop('checked') == true)? false: true;
 
-	 		start_loading();
+	 	// 	start_loading();
 
-	 		$.post($base_url + $tasks + $module_task + "/update_last_dr_flag/", {dr_gr_id: $('#dr_gr_id').val() || "0", last_dr_flag : check_flag, core_task_id: $('#core_task_id').val() || "0", dependent_task: $('#dependent_task').val() || "0"}, function(result) {
-	 			end_loading();
-				notification_msg(result.status, result.msg);
+	 	// 	$.post($base_url + $tasks + $module_task + "/update_last_dr_flag/", {dr_gr_id: $('#dr_gr_id').val() || "0", last_dr_flag : check_flag, core_task_id: $('#core_task_id').val() || "0", dependent_task: $('#dependent_task').val() || "0"}, function(result) {
+	 	// 		end_loading();
+		// 		notification_msg(result.status, result.msg);
 
-				if(result.status == "error")
-				{
-					$(".auto_save_dr").prop('checked', revert_prop);
-				}
-			}, 'json');
-	 	});
+		// 		if(result.status == "error")
+		// 		{
+		// 			$(".auto_save_dr").prop('checked', revert_prop);
+		// 		}
+		// 	}, 'json');
+	 	// });
 	};
 
 	var _processAction = function(){
@@ -618,7 +621,7 @@ var Task = (function($, document, window)
 		if(concatForm.includes(_taskConfig.targetId))
 			 _taskConfig.formData += '&' + $('.confirmModal').find('#task_form_confirm_modal').serialize();
 
-		var options = {
+        var options = {
 			blockUI	   : true,
 			body       : _taskConfig.formData,
 			path       : _taskConfig.url,
@@ -638,24 +641,6 @@ var Task = (function($, document, window)
 					setTimeout( () => start_loading() , 1000);
 
 					location.reload();
-
-					/* if(_taskConfig.hasUpload == true && (response.doc_ref) )
-					{
-						Documents.set(response.doc_ref);
-
-						for(var a of autoSubObj)
-							window[a].startUpload();
-					}
-					else
-					{
-						end_loading();
-
-						notification_msg(response.flag, response.msg);
-
-						setTimeout( () => start_loading() , 1000);
-
-						location.reload();
-					}	 */
 				}
 				else
 				{
@@ -669,7 +654,45 @@ var Task = (function($, document, window)
 			}
 		};
 
-		General.Fetch(options);
+        var ProcessConfig = {
+			blockUI	   : true,
+			body       : _taskConfig.formData,
+			path       : window.location.origin + window.location.pathname + '/process',
+			successFunc: function(response){
+
+				if(_taskConfig.buttonLoader)
+					button_loader(_taskConfig.buttonId, 0);
+
+				if(response.flag == $.CONSTANTS.SUCCESS)
+				{
+                    General.Fetch(options);
+					// start_loading();
+
+					// end_loading();
+
+					// notification_msg(response.flag, response.msg);
+
+					// setTimeout( () => start_loading() , 1000);
+
+					// location.reload();
+				}
+				else
+				{
+					end_loading();
+
+					notification_msg(response.flag, response.msg);
+				}
+			},
+			completeFunc: function(){
+
+			}
+		};
+
+        if(_taskConfig.url.includes('tag_approve')){
+            General.Fetch(ProcessConfig);
+        }else{
+            General.Fetch(options);
+        }
 	};
 
 	var _loadConfirm   = function(){
